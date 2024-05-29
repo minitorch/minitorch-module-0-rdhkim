@@ -31,13 +31,32 @@ class Module:
 
     def train(self) -> None:
         "Set the mode of this module and all descendent modules to `train`."
-        # TODO: Implement for Task 0.4.
-        raise NotImplementedError("Need to implement for Task 0.4")
+        # this module
+        self.training = True
+
+        # descendents
+        q = [self._modules]
+        while q:
+            children = q.pop()
+            for name, child_module in children.items():
+                child_module.training = True
+                if len(child_module._modules) > 1:
+                    q.append(child_module._modules)
+
 
     def eval(self) -> None:
         "Set the mode of this module and all descendent modules to `eval`."
-        # TODO: Implement for Task 0.4.
-        raise NotImplementedError("Need to implement for Task 0.4")
+        # this module
+        self.training = False
+
+        # descendents
+        q = [self._modules]
+        while q:
+            children = q.pop()
+            for name, child_module in children.items():
+                child_module.training = False
+                if len(child_module._modules) > 1:
+                    q.append(child_module._modules)
 
     def named_parameters(self) -> Sequence[Tuple[str, Parameter]]:
         """
@@ -47,13 +66,42 @@ class Module:
         Returns:
             The name and `Parameter` of each ancestor parameter.
         """
-        # TODO: Implement for Task 0.4.
-        raise NotImplementedError("Need to implement for Task 0.4")
+        # this module
+        named_parameters = [ (name, parameter) for name, parameter in self._parameters.items() ]
+
+        # descendents
+        q = [ (name, module) for name, module in self._modules.items()]
+        while q:
+            module_name, module = q.pop()
+            for param_name, parameter in module._parameters.items():
+                print(module_name, parameter, param_name)
+                named_parameters.append((str(module_name) + '.' + str(param_name), parameter))
+            if module._modules:
+                q += [(str(module_name) + '.' + str(child_module_name), child_module) for child_module_name, child_module in module._modules.items()]
+
+        return named_parameters
+
 
     def parameters(self) -> Sequence[Parameter]:
         "Enumerate over all the parameters of this module and its descendents."
-        # TODO: Implement for Task 0.4.
-        raise NotImplementedError("Need to implement for Task 0.4")
+        # this module
+        params = [ param for param in self._parameters.values()]
+
+        # descendents
+        q = []
+        for module_name, module in self._modules.items():
+            q.append(module)
+
+        while q:
+            curr_module = q.pop()
+
+            if curr_module._parameters:
+                for param in curr_module._parameters.values():
+                    params.append(param)
+                if curr_module._modules.values():
+                    for module_name, module in curr_module._modules.items():
+                        q.append(module)
+        return params
 
     def add_parameter(self, k: str, v: Any) -> Parameter:
         """
